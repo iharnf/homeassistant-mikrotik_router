@@ -106,7 +106,7 @@ class MikrotikAPI:
         self._connection = None
         self._connection_epoch = 0
 
-    # ---------------------------
+ # ---------------------------
     #   connect
     # ---------------------------
     def connect(self) -> bool:
@@ -117,9 +117,18 @@ class MikrotikAPI:
 
         kwargs = {
             "encoding": self._encoding,
-            "login_methods": self._login_method,
             "port": self._port,
         }
+
+        if isinstance(self._login_method, str):
+            if self._login_method == "plain":
+                from librouteros.login import plain
+                kwargs["login_method"] = plain
+            elif self._login_method == "token":
+                from librouteros.login import token
+                kwargs["login_method"] = token
+        else:
+            kwargs["login_method"] = self._login_method
 
         self.lock.acquire()
         try:
@@ -134,6 +143,7 @@ class MikrotikAPI:
                         ssl_context.verify_mode = ssl.CERT_NONE
                     self._ssl_wrapper = ssl_context.wrap_socket
                 kwargs["ssl_wrapper"] = self._ssl_wrapper
+            
             self._connection = librouteros.connect(
                 self._host, self._username, self._password, **kwargs
             )
