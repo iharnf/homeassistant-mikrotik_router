@@ -498,32 +498,44 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
 
         elif 0 < self.major_fw_version >= 7:
             self.support_ppp = True
-            self.support_wireless = True
-            if "wifiwave2" in packages and packages["wifiwave2"]["enabled"]:
+            # RouterOS 7 can still use the legacy wireless package (for
+            # example, hAP ac²).  Do not force the newer WiFi API solely
+            # based on the RouterOS version: the legacy package exposes the
+            # client table at /interface/wireless/registration-table.
+            if "wireless" in packages and packages["wireless"]["enabled"]:
+                self.support_capsman = True
+                self.support_wireless = True
+                self._wifimodule = "wireless"
+            elif "wifiwave2" in packages and packages["wifiwave2"]["enabled"]:
+                self.support_wireless = True
                 self.support_capsman = False
                 self._wifimodule = "wifiwave2"
 
             elif "wifi" in packages and packages["wifi"]["enabled"]:
+                self.support_wireless = True
                 self.support_capsman = False
                 self._wifimodule = "wifi"
 
             elif "wifi-qcom" in packages and packages["wifi-qcom"]["enabled"]:
+                self.support_wireless = True
                 self.support_capsman = False
                 self._wifimodule = "wifi"
 
             elif "wifi-qcom-ac" in packages and packages["wifi-qcom-ac"]["enabled"]:
+                self.support_wireless = True
                 self.support_capsman = False
                 self._wifimodule = "wifi"
 
             elif (
                 self.major_fw_version == 7 and self.minor_fw_version >= 13
             ) or self.major_fw_version > 7:
+                self.support_wireless = True
                 self.support_capsman = False
                 self._wifimodule = "wifi"
 
             else:
                 self.support_capsman = True
-                self.support_wireless = bool(self.minor_fw_version < 13)
+                self.support_wireless = True
 
             _LOGGER.debug(
                 "Mikrotik %s wifi module=%s",
